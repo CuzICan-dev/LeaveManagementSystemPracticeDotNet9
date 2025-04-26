@@ -7,15 +7,25 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using LeaveManagementSystemPractice.web.Data;
 using LeaveManagementSystemPractice.web.Data.Entities;
+using LeaveManagementSystemPractice.web.Models.LeaveTypes;
 
 namespace LeaveManagementSystemPractice.web.Controllers
 {
     public class LeaveTypesController(ApplicationDbContext context) : Controller
     {
+        private const string NameExistsValidationMessage = "Name already exists in the database";
+        
         // GET: LeaveTypes
         public async Task<IActionResult> Index()
         {
-            return View(await context.LeaveType.ToListAsync());
+            var leaveTypes = await context.LeaveType.ToListAsync();
+            IEnumerable<LeaveTypeReadOnlyVM> leaveTypeReadOnlyVMs = leaveTypes.Select(leaveType => new LeaveTypeReadOnlyVM
+            {
+                Id = leaveType.Id,
+                Name = leaveType.Name,
+                NumberOfDays = leaveType.NumberOfDays
+            });
+            return View(leaveTypeReadOnlyVMs);
         }
 
         // GET: LeaveTypes/Details/5
@@ -32,8 +42,14 @@ namespace LeaveManagementSystemPractice.web.Controllers
             {
                 return NotFound();
             }
-
-            return View(leaveType);
+            
+            LeaveTypeReadOnlyVM leaveTypeReadOnlyVM = new LeaveTypeReadOnlyVM
+            {
+                Id = leaveType.Id,
+                Name = leaveType.Name,
+                NumberOfDays = leaveType.NumberOfDays
+            };
+            return View(leaveTypeReadOnlyVM);
         }
 
         // GET: LeaveTypes/Create
@@ -47,15 +63,24 @@ namespace LeaveManagementSystemPractice.web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name,NumberOfDays")] LeaveType leaveType)
+        public async Task<IActionResult> Create(LeaveTypeCreateVM leaveTypeCreateVM)
         {
+            if (await context.LeaveType.AnyAsync(e => e.Name.ToLower().Equals(leaveTypeCreateVM.Name.ToLower())))
+            {
+                ModelState.AddModelError(nameof(leaveTypeCreateVM.Name), NameExistsValidationMessage);
+            }
             if (ModelState.IsValid)
             {
+                LeaveType leaveType = new LeaveType
+                {
+                    Name = leaveTypeCreateVM.Name,
+                    NumberOfDays = leaveTypeCreateVM.NumberOfDays
+                };
                 context.Add(leaveType);
                 await context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
-            return View(leaveType);
+            return View(leaveTypeCreateVM);
         }
 
         // GET: LeaveTypes/Edit/5
@@ -71,7 +96,13 @@ namespace LeaveManagementSystemPractice.web.Controllers
             {
                 return NotFound();
             }
-            return View(leaveType);
+            LeaveTypeEditVM leaveTypeEditVM = new LeaveTypeEditVM
+            {
+                Id = leaveType.Id,
+                Name = leaveType.Name,
+                NumberOfDays = leaveType.NumberOfDays
+            };
+            return View(leaveTypeEditVM);
         }
 
         // POST: LeaveTypes/Edit/5
@@ -79,9 +110,9 @@ namespace LeaveManagementSystemPractice.web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Name,NumberOfDays")] LeaveType leaveType)
+        public async Task<IActionResult> Edit(int id, LeaveTypeEditVM leaveTypeEditVM)
         {
-            if (id != leaveType.Id)
+            if (id != leaveTypeEditVM.Id)
             {
                 return NotFound();
             }
@@ -90,12 +121,18 @@ namespace LeaveManagementSystemPractice.web.Controllers
             {
                 try
                 {
+                    LeaveType leaveType = new LeaveType
+                    {
+                        Id = leaveTypeEditVM.Id,
+                        Name = leaveTypeEditVM.Name,
+                        NumberOfDays = leaveTypeEditVM.NumberOfDays
+                    };
                     context.Update(leaveType);
                     await context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!LeaveTypeExists(leaveType.Id))
+                    if (!LeaveTypeExists(leaveTypeEditVM.Id))
                     {
                         return NotFound();
                     }
@@ -106,7 +143,7 @@ namespace LeaveManagementSystemPractice.web.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            return View(leaveType);
+            return View(leaveTypeEditVM);
         }
 
         // GET: LeaveTypes/Delete/5
@@ -124,7 +161,13 @@ namespace LeaveManagementSystemPractice.web.Controllers
                 return NotFound();
             }
 
-            return View(leaveType);
+            LeaveTypeReadOnlyVM leaveTypeReadOnlyVM = new LeaveTypeReadOnlyVM
+            {
+                Id = leaveType.Id,
+                Name = leaveType.Name,
+                NumberOfDays = leaveType.NumberOfDays
+            };
+            return View(leaveTypeReadOnlyVM);
         }
 
         // POST: LeaveTypes/Delete/5
