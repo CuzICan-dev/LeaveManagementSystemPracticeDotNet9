@@ -11,5 +11,7 @@ public class ApplicationDbContext : IdentityDbContext
     {
     }
 
-public DbSet<LeaveManagementSystemPractice.web.Data.Entities.LeaveType> LeaveType { get; set; } = default!;
+public DbSet<LeaveType> LeaveType { get; set; } = default!;
+
+public DbSet<Period> Period { get; set; } = default!;
 }
